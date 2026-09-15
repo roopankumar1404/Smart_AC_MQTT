@@ -1,4 +1,4 @@
-﻿# ❄️ Smart AC - Dual-Core ESP32 IoT Climate & Energy System
+# ❄️ Smart AC - Dual-Core ESP32 IoT Climate & Energy System
 
 [![ESP32](https://img.shields.io/badge/Platform-ESP32%20Dual--Core-red.svg?logo=espressif)](https://www.espressif.com/)
 [![Flutter](https://img.shields.io/badge/Mobile%20App-Flutter%203.x-blue.svg?logo=flutter)](https://flutter.dev/)
@@ -55,52 +55,48 @@ An industrial-grade, full-stack IoT Smart Air Conditioner control, monitoring, a
 
 ## 🏛️ System Architecture
 
-`	ext
-               +-----------------------------+
-               | Physical Remote (IR Signal) |
-               +--------------+--------------+
-                              | (38kHz)
-                              v
-    +---------------------------------------------------+
-    |                 ESP32 Microcontroller             |
-    |                                                   |
-    |   CORE 1 (Hardware / Sensors):                    |
-    |   - IR Receiver (TSOP38238) [GPIO 4]              |
-    |   - IR Blaster LED (IRLgAc) [GPIO 5]              |
-    |   - PZEM-004T v3.0 (Serial2) [GPIO 16/17]         |
-    |   - DHT22 Temp/Humidity [GPIO 15 / Gating GPIO 25]|
-    |   - SSD1306 OLED (I2C) [GPIO 21/22]               |
-    |   - Mode Toggle Button [GPIO 2]                   |
-    |                                                   |
-    |   CORE 0 (Networking & Protocol Stack):           |
-    |   - FreeRTOS Async Message Queue                  |
-    |   - WiFi 802.11 b/g/n Client                      |
-    |   - MQTTS TLS (Port 8883) Client                  |
-    |   - NTP Real-Time Clock Sync                      |
-    +-------------------------+-------------------------+
-                              |
-                    TLS Port 8883 (MQTTS)
-                              |
-                              v
-    +---------------------------------------------------+
-    |                EMQX Cloud MQTT Broker             |
-    |                                                   |
-    |   Topics:                                         |
-    |   - smartac/ac_living_room_01/cmd                 |
-    |   - smartac/ac_living_room_01/state               |
-    |   - smartac/ac_living_room_01/telemetry           |
-    |   - smartac/ac_living_room_01/status              |
-    |   - smartac/ac_living_room_01/telegram            |
-    +-------------+-----------------------+-------------+
-                  |                       |
-       (MQTT TLS Subscriptions)           | (Rule Engine Webhook)
-                  |                       |
-                  v                       v
-    +-------------------------+ +-----------------------+
-    |    Flutter Mobile App   | |    Telegram Bot API   |
-    |    (Android / iOS)      | |   (@Smart_ACbot 24/7) |
-    +-------------------------+ +-----------------------+
-`
+```mermaid
+flowchart TD
+    subgraph UI["📱 User Control Interfaces"]
+        Remote["Physical IR Remote<br/>(38kHz Carrier)"]
+        App["Flutter Mobile App<br/>(Android / iOS)"]
+        Telegram["Telegram Bot API<br/>(@Smart_ACbot 24/7 Alerts)"]
+    end
+
+    subgraph ESP["⚡ Dual-Core ESP32 Microcontroller"]
+        subgraph C1["Core 1 — Sensors & Hardware Loop"]
+            IR_RX["TSOP38238 IR Receiver<br/>(GPIO 4)"]
+            IR_TX["IR LED Blaster (IRLgAc)<br/>(GPIO 5)"]
+            PZEM["PZEM-004T Energy Meter<br/>(UART2 GPIO 16/17)"]
+            DHT["DHT22 Temp & Humidity<br/>(GPIO 15 / Gating GPIO 25)"]
+            OLED["SSD1306 0.96'' OLED<br/>(I2C GPIO 21/22)"]
+            BTN["Mode Push Button<br/>(GPIO 2)"]
+        end
+
+        subgraph C0["Core 0 — Network & Protocols"]
+            QUEUE["FreeRTOS Queue"]
+            WIFI["WiFi 802.11 b/g/n"]
+            MQTT_C["MQTTS TLS Client (Port 8883)"]
+            NTP["NTP Real-Time Clock"]
+        end
+    end
+
+    subgraph Cloud["☁️ EMQX Cloud Broker"]
+        BROKER["EMQX MQTT TLS Broker<br/>(Port 8883)"]
+        RULE["Cloud Rule Engine<br/>(Webhook Forwarder)"]
+    end
+
+    Remote -->|IR Signal| IR_RX
+    IR_TX -->|IR Command| AC["❄️ Air Conditioner Unit"]
+    IR_RX -.->|Sync State| C1
+    C1 <==>|Thread-Safe Queue| QUEUE
+    QUEUE <==> C0
+    C0 <==>|TLS Port 8883| BROKER
+
+    BROKER <==>|Publish / Subscribe| App
+    BROKER -->|smartac/+/telegram| RULE
+    RULE -->|HTTPS Webhook| Telegram
+```
 
 ---
 
@@ -108,16 +104,16 @@ An industrial-grade, full-stack IoT Smart Air Conditioner control, monitoring, a
 
 | Component | Pin / Signal | ESP32 GPIO | Description / Notes |
 | :--- | :--- | :--- | :--- |
-| **TSOP38238 / VS1838B** | Data OUT | GPIO 4 | IR receiver input for physical remote decoding |
-| **940nm IR Blaster LED** | Transistor Base | GPIO 5 | Driven via 2N2222 / 330Ω base resistor |
-| **PZEM-004T v3.0** | RX | GPIO 17 (TX2)| Modbus UART Serial2 Transmission |
-| **PZEM-004T v3.0** | TX | GPIO 16 (RX2)| Modbus UART Serial2 Reception |
-| **DHT22 (AM2302)** | Data (OUT) | GPIO 15 | Temperature & Relative Humidity reading |
-| **DHT22 Power Gating** | Transistor Base | GPIO 25 | Periodic power toggle to prevent self-heating |
-| **SSD1306 OLED** | SDA | GPIO 21 | I2C Data line (0x3C address) |
-| **SSD1306 OLED** | SCL | GPIO 22 | I2C Clock line |
-| **Tactile Push Button** | Signal | GPIO 2 | Active LOW with internal pull-up for OLED screen swap |
-| **Status Indicator** | LED | GPIO 2 | On-board activity / network status indicator |
+| **TSOP38238 / VS1838B** | Data OUT | `GPIO 4` | IR receiver input for physical remote decoding |
+| **940nm IR Blaster LED** | Transistor Base | `GPIO 5` | Driven via 2N2222 / 330Ω base resistor |
+| **PZEM-004T v3.0** | RX | `GPIO 17 (TX2)`| Modbus UART Serial2 Transmission |
+| **PZEM-004T v3.0** | TX | `GPIO 16 (RX2)`| Modbus UART Serial2 Reception |
+| **DHT22 (AM2302)** | Data (OUT) | `GPIO 15` | Temperature & Relative Humidity reading |
+| **DHT22 Power Gating** | Transistor Base | `GPIO 25` | Periodic power toggle to prevent self-heating |
+| **SSD1306 OLED** | SDA | `GPIO 21` | I2C Data line (0x3C address) |
+| **SSD1306 OLED** | SCL | `GPIO 22` | I2C Clock line |
+| **Tactile Push Button** | Signal | `GPIO 2` | Active LOW with internal pull-up for OLED screen swap |
+| **Status Indicator** | LED | `GPIO 2` | On-board activity / network status indicator |
 
 ---
 
@@ -127,17 +123,17 @@ To avoid timing jitter during 38kHz IR modulation and sensor reads, tasks are st
 
 | FreeRTOS Task | Target Core | Priority | Role & Functionality |
 | :--- | :---: | :---: | :--- |
-| **core0Task** | **Core 0** | 1 | WiFi management, EMQX MQTT TLS loop, reconnect watchdogs, NTP synchronization, and async Telegram message queue dispatching. |
-| **loop() / Sensors** | **Core 1** | 1 | PZEM-004T energy sampling, DHT22 state machine, continuous IR loopback signal processing, and OLED UI updates. |
+| **`core0Task`** | **Core 0** | 1 | WiFi management, EMQX MQTT TLS loop, reconnect watchdogs, NTP synchronization, and async Telegram message queue dispatching. |
+| **`loop()` / Sensors** | **Core 1** | 1 | PZEM-004T energy sampling, DHT22 state machine, continuous IR loopback signal processing, and OLED UI updates. |
 
 ---
 
 ## 📨 MQTT Topic Schema
 
-All payloads are formatted as compact JSON strings under the device prefix smartac/ac_living_room_01/:
+All payloads are formatted as compact JSON strings under the device prefix `smartac/ac_living_room_01/`:
 
-### 1. Command (.../cmd) - *App to ESP32*
-`json
+### 1. Command (`.../cmd`) — *App to ESP32*
+```json
 {
   "power": true,
   "temp": 24,
@@ -145,10 +141,10 @@ All payloads are formatted as compact JSON strings under the device prefix smart
   "fan": "auto",
   "swing": "auto"
 }
-`
+```
 
-### 2. State (.../state) - *ESP32 to App (Retained)*
-`json
+### 2. State (`.../state`) — *ESP32 to App (Retained)*
+```json
 {
   "power": true,
   "temp": 24,
@@ -158,10 +154,10 @@ All payloads are formatted as compact JSON strings under the device prefix smart
   "source": "remote",
   "timestamp": 1757912400
 }
-`
+```
 
-### 3. Telemetry (.../telemetry) - *ESP32 to App (Every 2.5s)*
-`json
+### 3. Telemetry (`.../telemetry`) — *ESP32 to App (Every 2.5s)*
+```json
 {
   "voltage": 230.4,
   "current": 4.12,
@@ -173,18 +169,21 @@ All payloads are formatted as compact JSON strings under the device prefix smart
   "humidity": 58.4,
   "wifi_rssi": -62
 }
-`
+```
 
-### 4. Status (.../status) - *Last Will & Testament (Retained)*
-- Online: {"status":"online","ip":"192.168.1.50"}
-- Offline: {"status":"offline"}
+### 4. Status (`.../status`) — *Last Will & Testament (Retained)*
+- Online: `{"status":"online","ip":"192.168.1.50"}`
+- Offline: `{"status":"offline"}`
 
-### 5. Telegram (.../telegram) - *ESP32 to Cloud Rule*
-`json
+### 5. Telegram (`.../telegram`) — *ESP32 to Cloud Rule*
+```json
 {
-  "text": "🔔 Smart AC Turn-OFF Summary:\n⏱ Duration: 2h 15m\n⚡ Energy: 1.84 kWh\n💰 Est Cost: ₹14.72"
+  "text": "🔔 Smart AC Turn-OFF Summary:
+⏱ Duration: 2h 15m
+⚡ Energy: 1.84 kWh
+💰 Est Cost: ₹14.72"
 }
-`
+```
 
 ---
 
@@ -192,7 +191,7 @@ All payloads are formatted as compact JSON strings under the device prefix smart
 
 The system issues automated notifications for critical events directly to your Telegram account:
 
-`	ext
+```text
 🔔 [SMART AC ONLINE]
 ESP32 connected to EMQX Cloud.
 IP: 192.168.1.50 | RSSI: -61 dBm
@@ -211,29 +210,40 @@ Session Cost: ₹23.28
 Daily AC Runtime: 6 hrs 42 mins
 Total Energy Today: 5.78 kWh
 Estimated Cost: ₹46.24
-`
+```
 
 ---
 
-## 📂 Project Directory Structure
+## 📁 Project Directory Structure
 
-`	ext
+```text
 Smart_AC_MQTT/
-├── Smart_AC_MQTT.ino           # ESP32 Dual-Core FreeRTOS firmware sketch
-├── pubspec.yaml                # Flutter project dependencies & asset declarations
-├── lib/
-│   ├── main.dart               # Flutter application entry point
-│   ├── firebase_options.dart   # Firebase configuration options
-│   ├── core/                   # Design system, themes, and application constants
-│   ├── models/                 # Data models (ACState, TelemetryData, Schedule)
-│   ├── providers/              # State management (ACProvider, WeatherProvider, etc.)
-│   ├── screens/                # UI Screens (Dashboard, Analytics, Scheduler, Settings)
-│   ├── services/               # MQTT client, FCM push, Auth, and Storage services
-│   └── widgets/                # Reusable UI widgets (Gauges, Power Cards, Charts)
-├── android/                    # Native Android project configuration & manifests
-├── assets/                     # UI icons, animations, and sound effects
-└── README.md                   # Project documentation
-`
+|-- Smart_AC_MQTT.ino           # ESP32 Dual-Core FreeRTOS firmware sketch
+|-- pubspec.yaml                # Flutter project dependencies & asset declarations
+|-- lib/
+|   |-- main.dart               # Flutter application entry point
+|   |-- firebase_options.dart   # Firebase configuration options
+|   |-- core/                   # Design system, themes, and application constants
+|   |-- models/                 # Data models (ACState, TelemetryData, Schedule)
+|   |-- providers/              # State management (ACProvider, WeatherProvider, etc.)
+|   |-- screens/                # UI Screens (Dashboard, Analytics, Scheduler, Settings)
+|   |-- services/               # MQTT client, FCM push, Auth, and Storage services
+|   `-- widgets/                # Reusable UI widgets (Gauges, Power Cards, Charts)
+|-- android/                    # Native Android project configuration & manifests
+|-- assets/                     # UI icons, animations, and sound effects
+`-- README.md                   # Project documentation
+```
+
+### Key Modules Breakdown
+
+| Path | Description |
+| :--- | :--- |
+| **`Smart_AC_MQTT.ino`** | Core ESP32 sketch running FreeRTOS tasks, PZEM-004T Modbus sampling, DHT22 power gating, IR remote decoding/blaster loopback, SSD1306 OLED screens, and EMQX TLS MQTT. |
+| **`lib/services/mqtt_service.dart`** | Production Flutter MQTT client managing background connection, subscriptions, command queuing, and auto-reconnect logic. |
+| **`lib/providers/device_provider.dart`** | Central state provider connecting MQTT telemetry/state streams to the Flutter reactive UI. |
+| **`lib/screens/dashboard/`** | Main dashboard with interactive climate ring, live wattage meters, and remote control panel. |
+| **`lib/screens/energy/`** | Comprehensive energy and cost analytics screens with historical breakdown. |
+| **`lib/services/fcm_push_service.dart`** | Firebase Cloud Messaging push notification dispatcher. |
 
 ---
 
@@ -243,27 +253,27 @@ Smart_AC_MQTT/
 
 1. **Install Arduino IDE** (version 2.x recommended).
 2. Add ESP32 board support via Boards Manager:
-   - URL: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+   - URL: `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
 3. Install the required Arduino libraries:
-   - PubSubClient by Nick O'Leary
-   - ArduinoJson (v6.x or v7.x) by Benoit Blanchon
-   - IRremoteESP8266 by Mark Szabo, David Conran
-   - PZEM004Tv30 by Mandar
-   - DHT sensor library by Adafruit
-   - Adafruit SSD1306 & Adafruit GFX Library
-4. Open Smart_AC_MQTT.ino, enter your WiFi and MQTT credentials (see [Security & Credential Configuration](#-security--credential-configuration)), select **ESP32 Dev Module**, and click **Upload**.
+   - `PubSubClient` by Nick O'Leary
+   - `ArduinoJson` (v6.x or v7.x) by Benoit Blanchon
+   - `IRremoteESP8266` by Mark Szabo, David Conran
+   - `PZEM004Tv30` by Mandar
+   - `DHT sensor library` by Adafruit
+   - `Adafruit SSD1306` & `Adafruit GFX Library`
+4. Open `Smart_AC_MQTT.ino`, enter your WiFi and MQTT credentials (see [Security & Credential Configuration](#-security--credential-configuration)), select **ESP32 Dev Module**, and click **Upload**.
 
 ### 2. Flutter Mobile App Setup
 
-1. **Prerequisites**: Ensure Flutter SDK (>=3.0.0) is installed and available in your PATH.
+1. **Prerequisites**: Ensure Flutter SDK (>=3.0.0) is installed and available in your `PATH`.
 2. Navigate to the project root and install packages:
-   `ash
+   ```bash
    flutter pub get
-   `
+   ```
 3. Run the application on your connected Android device or emulator:
-   `ash
+   ```bash
    flutter run
-   `
+   ```
 
 ### 3. EMQX Cloud & Telegram Webhook Rule Engine
 
@@ -271,36 +281,36 @@ To enable 24/7 alerts without keeping a server or app alive:
 1. Log into your **EMQX Cloud Console**.
 2. Navigate to **Data Integration** -> **Rules** -> **Create Rule**.
 3. **SQL Query**:
-   `sql
+   ```sql
    SELECT payload.text as text FROM "smartac/+/telegram"
-   `
+   ```
 4. **Action**: Add an **HTTP / Webhook Action**:
-   - **Method**: POST
-   - **URL**: https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/sendMessage
-   - **Headers**: Content-Type: application/json
+   - **Method**: `POST`
+   - **URL**: `https://api.telegram.org/bot<YOUR_TELEGRAM_BOT_TOKEN>/sendMessage`
+   - **Headers**: `Content-Type: application/json`
    - **Body Template**:
-     `json
+     ```json
      {
        "chat_id": "<YOUR_TELEGRAM_CHAT_ID>",
-       "text": ""
+       "text": "${text}"
      }
-     `
+     ```
 
 ---
 
 ## 🔐 Security & Credential Configuration
 
-For open-source distribution, all private credentials in this repository are replaced with *** placeholders. Before running, insert your credentials in the following files:
+For open-source distribution, all private credentials in this repository are replaced with `***` placeholders. Before running, insert your credentials in the following files:
 
 | File | Credentials to Configure |
 | :--- | :--- |
-| **Smart_AC_MQTT.ino** | WIFI_SSID, WIFI_PASSWORD, MQTT_BROKER, MQTT_USER, MQTT_PASS, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID |
-| **lib/services/mqtt_service.dart** | _broker, _user, _pass |
-| **lib/services/fcm_push_service.dart** | Google Cloud Service Account Private Key |
-| **lib/core/constants.dart** | weatherApiKey (OpenWeatherMap API Key) |
-| **ndroid/app/google-services.json** | Firebase current_key and mobile app client ID |
+| **`Smart_AC_MQTT.ino`** | `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_BROKER`, `MQTT_USER`, `MQTT_PASS`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` |
+| **`lib/services/mqtt_service.dart`** | `_broker`, `_user`, `_pass` |
+| **`lib/services/fcm_push_service.dart`** | Google Cloud Service Account Private Key |
+| **`lib/core/constants.dart`** | `weatherApiKey` (OpenWeatherMap API Key) |
+| **`android/app/google-services.json`** | Firebase `current_key` and mobile app client ID |
 
-> 💡 **Tip for Local Users**: If you are working on your local machine, your original live credentials have been preserved in my_secrets_backup.local (which is excluded from Git).
+> 💡 **Tip for Local Users**: If you are working on your local machine, your original live credentials have been preserved in `my_secrets_backup.local` (which is excluded from Git).
 
 ---
 
