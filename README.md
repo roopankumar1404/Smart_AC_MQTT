@@ -45,7 +45,7 @@ An industrial-grade, full-stack IoT Smart Air Conditioner control, monitoring, a
 - **Real-Time Control**: Power, target temperature, operating modes (Cool, Dry, Fan, Auto), fan speeds (Auto, Min, Med, Max), and oscillation swing modes.
 - **Live Telemetry & Diagnostics**: Voltage stability gauges, current load curves, and live power graphs.
 - **Scheduler & Auto-Off Timers**: Granular weekly schedules and countdown sleep timers executed both in-app and on the ESP32 hardware level.
-- **Energy Cost Analytics**: Real-time daily, weekly, and monthly kWh tracking with custom electricity tariff rates.
+- **Energy & Power Analytics**: Real-time daily, weekly, and monthly kWh tracking, active power draw (W/kW), and live voltage/current monitoring.
 - **Light / Dark Theme Support**: Sleek, modern glassmorphic UI tailored for both iOS and Android.
 
 ### 🔔 Cloud-Native Telegram Alert System
@@ -69,27 +69,27 @@ The Flutter mobile application provides an ultra-responsive, glassmorphic dark-m
       <td align="center" width="20%">
         <img src="assets/screenshots/Dashboard_Screen.png" width="100%" alt="Dashboard Screen" /><br/>
         <b>🏠 Dashboard</b><br/>
-        <sub>Live Climate, Temp Ring &amp; Wattage</sub>
+        <sub>Live Climate, Temp Ring &amp; Current Power</sub>
       </td>
       <td align="center" width="20%">
         <img src="assets/screenshots/Remote_Screen.png" width="100%" alt="Remote Control Screen" /><br/>
         <b>🎮 Digital Remote</b><br/>
-        <sub>AC Modes, Fan Speeds &amp; Vane Swing</sub>
+        <sub>AC Modes, Fan Speeds &amp; Vertical Swing</sub>
       </td>
       <td align="center" width="20%">
         <img src="assets/screenshots/Energy_Screen.png" width="100%" alt="Energy Screen" /><br/>
         <b>⚡ Energy Analytics</b><br/>
-        <sub>PZEM Voltage, Current &amp; Tariff Cost</sub>
+        <sub>Power (kW), Daily Usage &amp; Historical Graphs</sub>
       </td>
       <td align="center" width="20%">
         <img src="assets/screenshots/System_Screen.png" width="100%" alt="System Screen" /><br/>
         <b>🩺 Diagnostics</b><br/>
-        <sub>ESP32 Health, Watchdogs &amp; Uptime</sub>
+        <sub>ESP32 Health, Watchdogs &amp; Module Status</sub>
       </td>
       <td align="center" width="20%">
         <img src="assets/screenshots/Telegram_Notification.png" width="100%" alt="Telegram Alerts" /><br/>
         <b>🔔 24/7 Alerts</b><br/>
-        <sub>Cloud Telegram Brownout &amp; Turn-Off Logs</sub>
+        <sub>Cloud Telegram Brownout &amp; Session Logs</sub>
       </td>
     </tr>
   </table>
@@ -97,67 +97,71 @@ The Flutter mobile application provides an ultra-responsive, glassmorphic dark-m
 
 ---
 
-## 🔌 Hardware Implementation & OLED Displays
+## 🔌 Hardware Implementation & OLED Multi-Screen Displays
 
-The physical controller uses custom circuitry with transistor-isolated DHT22 power gating, high-speed 38kHz IR receiver decoding, PZEM-004T AC mains energy metering, and an SSD1306 0.96" I2C OLED multi-screen diagnostics display.
+The physical controller is housed in a custom enclosure combining an ESP32 microcontroller board, PZEM-004T v3.0 mains energy meter with CT clamp, transistor-gated DHT22 climate sensor, bi-directional IR blaster/receiver modules, and an SSD1306 0.96" I2C OLED display.
 
-### ⚡ Circuitry & Transceiver Modules
+### ⚡ Circuit Setup & Transceiver Hardware
 
 <div align="center">
   <table>
     <tr>
       <td align="center" width="50%">
         <img src="assets/hardware/Circuit.png" width="100%" alt="Complete Hardware Circuit" /><br/>
-        <b>⚡ Complete Dual-Core ESP32 IoT Circuit Setup</b><br/>
-        <sub>ESP32 Dev Module, PZEM-004T v3.0, Gated DHT22 &amp; OLED Display</sub>
+        <b>⚡ Hardware Circuit Wiring &amp; Custom Enclosure</b><br/>
+        <sub>ESP32 Board, PZEM-004T v3.0 Energy Module, Gated DHT22 &amp; Power Supply</sub>
       </td>
       <td align="center" width="50%">
         <img src="assets/hardware/Ir_Blaster_Receiver.png" width="100%" alt="IR Blaster and Receiver Setup" /><br/>
         <b>📡 Bi-Directional IR Transceiver Hardware</b><br/>
-        <sub>TSOP38238 38kHz Decoder &amp; 940nm Blaster Transistor Circuit</sub>
+        <sub>TSOP38238 38kHz Decoder &amp; 940nm IR Blaster Transistor Circuit</sub>
       </td>
     </tr>
   </table>
 </div>
 
-### 📺 SSD1306 0.96" OLED Multi-Screen Telemetry
+### 📺 SSD1306 0.96" OLED Multi-Screen Diagnostics
 
-Tactile push-button screen rotation allows reviewing live performance metrics directly at the device:
+The on-board OLED display gives real-time local visibility without needing to open the mobile application:
+
+- **🔘 Manual Push-Button Screen Switching**: A tactile push button on the front panel allows cycling sequentially through **Screen 1 → Screen 2 → Screen 3 → Screen 4 → Screen 5 → Screen 1**.
+- **⏱️ Auto-Boot Default**: Upon bootup, the device displays **Screen 1 (System Status)** to verify connectivity, then automatically switches to **Screen 2 (Power Monitoring)** after 10 seconds.
+- **🔄 Auto-Cycling on Screen 2 (Power & Voltage)**: While on Screen 2, the firmware automatically toggles between **Screen 2a** (Active Power in Watts & Today's Energy in kWh) and **Screen 2b** (Mains Voltage in Volts & Current in Amperes) every 5 seconds without requiring any button press.
 
 <div align="center">
   <table>
     <tr>
       <td align="center" width="33%">
         <img src="assets/hardware/Screen_1.png" width="100%" alt="OLED Screen 1" /><br/>
-        <b>Screen 1 : Primary Climate</b><br/>
-        <sub>Indoor Temp, Humidity &amp; Target Setpoint</sub>
+        <b>Screen 1 : System Status</b><br/>
+        <sub>Online / Offline Status for WiFi, MQTT, PZEM &amp; DHT22</sub>
       </td>
       <td align="center" width="33%">
         <img src="assets/hardware/Screen_2a.png" width="100%" alt="OLED Screen 2a" /><br/>
-        <b>Screen 2 : Active Power Draw</b><br/>
-        <sub>Real-time Wattage (W) &amp; Compressor Load</sub>
+        <b>Screen 2a : Active Power &amp; Energy</b><br/>
+        <sub>Real-Time Power (W) &amp; Today's Cumulative Energy (kWh)</sub>
       </td>
       <td align="center" width="33%">
         <img src="assets/hardware/Screen_2b.png" width="100%" alt="OLED Screen 2b" /><br/>
-        <b>Screen 2b : Grid Voltage &amp; Current</b><br/>
-        <sub>True-RMS AC Voltage (V) &amp; Current (A)</sub>
+        <b>Screen 2b : Voltage &amp; Current</b><br/>
+        <sub>Mains Voltage (V) &amp; AC Load Current (A) [Auto-toggled every 5s]</sub>
       </td>
     </tr>
     <tr>
       <td align="center" width="33%">
         <img src="assets/hardware/Screen_3.png" width="100%" alt="OLED Screen 3" /><br/>
-        <b>Screen 3 : Cumulative Energy</b><br/>
-        <sub>Total Energy Consumed (kWh) &amp; Cost Tariff</sub>
+        <b>Screen 3 : Climate &amp; Temperatures</b><br/>
+        <sub>Set Temperature, Room Temp, Humidity (%) &amp; Outdoor Temp</sub>
       </td>
       <td align="center" width="33%">
         <img src="assets/hardware/Screen_4.png" width="100%" alt="OLED Screen 4" /><br/>
-        <b>Screen 4 : Network Health</b><br/>
-        <sub>WiFi RSSI, IP Address &amp; MQTT TLS Status</sub>
+        <b>Screen 4 : AC Controls State</b><br/>
+        <sub>Real-time AC Power (ON/OFF), Mode, Fan Speed &amp; Swing</sub>
       </td>
       <td align="center" width="33%">
         <img src="assets/hardware/Screen_5.png" width="100%" alt="OLED Screen 5" /><br/>
-        <b>Screen 5 : Filter &amp; Diagnostics</b><br/>
-        <sub>Air Filter Health (NVS) &amp; Boot Reason</sub>
+        <b>Screen 5 : Diagnostics &amp; Health</b><br/>
+        <sub>Free Heap Memory (KB), Uptime (min), Reboots &amp; Crash Reason</sub>
       </td>
     </tr>
   </table>
