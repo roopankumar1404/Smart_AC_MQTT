@@ -1,0 +1,53 @@
+﻿# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+*.tmp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ & VS Code
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# Flutter / Dart / Pub
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.flutter-plugins
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Android Local & Secrets
+**/local.properties
+android/.gradle/
+android/.kotlin/
+/android/app/debug
+/android/app/profile
+/android/app/release
+key.properties
+**/*.keystore
+**/*.jks
+
+# Local Credentials & Scratch Patches
+*.local
+my_secrets_backup.local
+tools/scratch_patches/
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+.widget_preview/
