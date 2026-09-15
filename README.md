@@ -55,48 +55,20 @@ An industrial-grade, full-stack IoT Smart Air Conditioner control, monitoring, a
 
 ## 🏛️ System Architecture
 
-```mermaid
-flowchart TD
-    subgraph UI["📱 User Control Interfaces"]
-        Remote["Physical IR Remote<br/>(38kHz Carrier)"]
-        App["Flutter Mobile App<br/>(Android / iOS)"]
-        Telegram["Telegram Bot API<br/>(@Smart_ACbot 24/7 Alerts)"]
-    end
+<p align="center">
+  <img src="assets/images/system_architecture.svg" alt="Smart AC System Architecture" width="100%" />
+</p>
 
-    subgraph ESP["⚡ Dual-Core ESP32 Microcontroller"]
-        subgraph C1["Core 1 — Sensors & Hardware Loop"]
-            IR_RX["TSOP38238 IR Receiver<br/>(GPIO 4)"]
-            IR_TX["IR LED Blaster (IRLgAc)<br/>(GPIO 5)"]
-            PZEM["PZEM-004T Energy Meter<br/>(UART2 GPIO 16/17)"]
-            DHT["DHT22 Temp & Humidity<br/>(GPIO 15 / Gating GPIO 25)"]
-            OLED["SSD1306 0.96'' OLED<br/>(I2C GPIO 21/22)"]
-            BTN["Mode Push Button<br/>(GPIO 2)"]
-        end
+### Architecture Breakdown & Data Flow
 
-        subgraph C0["Core 0 — Network & Protocols"]
-            QUEUE["FreeRTOS Queue"]
-            WIFI["WiFi 802.11 b/g/n"]
-            MQTT_C["MQTTS TLS Client (Port 8883)"]
-            NTP["NTP Real-Time Clock"]
-        end
-    end
-
-    subgraph Cloud["☁️ EMQX Cloud Broker"]
-        BROKER["EMQX MQTT TLS Broker<br/>(Port 8883)"]
-        RULE["Cloud Rule Engine<br/>(Webhook Forwarder)"]
-    end
-
-    Remote -->|IR Signal| IR_RX
-    IR_TX -->|IR Command| AC["❄️ Air Conditioner Unit"]
-    IR_RX -.->|Sync State| C1
-    C1 <==>|Thread-Safe Queue| QUEUE
-    QUEUE <==> C0
-    C0 <==>|TLS Port 8883| BROKER
-
-    BROKER <==>|Publish / Subscribe| App
-    BROKER -->|smartac/+/telegram| RULE
-    RULE -->|HTTPS Webhook| Telegram
-```
+| Layer | Component | Protocol / Interface | Primary Function |
+| :--- | :--- | :--- | :--- |
+| **Mobile Control** | Flutter App ↔ EMQX Cloud | `MQTTS TLS (Port 8883)` | Reactive control, live temperature curves, power consumption charts & timer scheduling. |
+| **Cloud Alerting** | EMQX Cloud ➔ Telegram API | `HTTPS Webhook (POST)` | 24/7 standalone alerting for brownouts (<190V), session energy summaries & nightly digests. |
+| **ESP32 Core 0** | Network & Protocol Task | `FreeRTOS Priority 1` | TLS MQTT client, non-blocking WiFi watchdogs, NTP synchronization & async Telegram FIFO queue. |
+| **ESP32 Core 1** | Sensor & Hardware Loop | `Sub-millisecond loop()` | PZEM-004T Modbus UART, 38kHz IR remote decoding loopback, DHT22 power gating & OLED display. |
+| **AC Interface** | ESP32 ➔ Split AC Unit | `940nm IR Blaster (GPIO 5)` | Modulated optical commands for power, temperature, fan speed, modes & swing positions. |
+| **Mains Grid** | 230V Line ➔ PZEM-004T | `CT Transformer (100A)` | True-RMS AC measurement of Voltage, Current, Active Power (W), Energy (kWh) & Power Factor. |
 
 ---
 
