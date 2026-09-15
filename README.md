@@ -13,6 +13,9 @@ An industrial-grade, full-stack IoT Smart Air Conditioner control, monitoring, a
 
 ## 📑 Table of Contents
 - [Key Features](#-key-features)
+- [Mobile Application Showcase](#-mobile-application-showcase)
+- [Hardware Implementation & OLED Displays](#-hardware-implementation--oled-displays)
+- [Real-World Demonstration Video](#-real-world-demonstration-video)
 - [System Architecture](#-system-architecture)
 - [Hardware Pinout & Wiring](#-hardware-pinout--wiring)
 - [Dual-Core FreeRTOS Partitioning](#-dual-core-freertos-partitioning)
@@ -53,6 +56,128 @@ An industrial-grade, full-stack IoT Smart Air Conditioner control, monitoring, a
 
 ---
 
+
+---
+
+## 📱 Mobile Application Showcase
+
+The Flutter mobile application provides an ultra-responsive, glassmorphic dark-mode dashboard with real-time state synchronization, live energy telemetry curves, and granular AC hardware control.
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="20%">
+        <img src="assets/screenshots/Dashboard_Screen.png" width="100%" alt="Dashboard Screen" /><br/>
+        <b>🏠 Dashboard</b><br/>
+        <sub>Live Climate, Temp Ring &amp; Wattage</sub>
+      </td>
+      <td align="center" width="20%">
+        <img src="assets/screenshots/Remote_Screen.png" width="100%" alt="Remote Control Screen" /><br/>
+        <b>🎮 Digital Remote</b><br/>
+        <sub>AC Modes, Fan Speeds &amp; Vane Swing</sub>
+      </td>
+      <td align="center" width="20%">
+        <img src="assets/screenshots/Energy_Screen.png" width="100%" alt="Energy Screen" /><br/>
+        <b>⚡ Energy Analytics</b><br/>
+        <sub>PZEM Voltage, Current &amp; Tariff Cost</sub>
+      </td>
+      <td align="center" width="20%">
+        <img src="assets/screenshots/System_Screen.png" width="100%" alt="System Screen" /><br/>
+        <b>🩺 Diagnostics</b><br/>
+        <sub>ESP32 Health, Watchdogs &amp; Uptime</sub>
+      </td>
+      <td align="center" width="20%">
+        <img src="assets/screenshots/Telegram_Notification.png" width="100%" alt="Telegram Alerts" /><br/>
+        <b>🔔 24/7 Alerts</b><br/>
+        <sub>Cloud Telegram Brownout &amp; Turn-Off Logs</sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## 🔌 Hardware Implementation & OLED Displays
+
+The physical controller uses custom circuitry with transistor-isolated DHT22 power gating, high-speed 38kHz IR receiver decoding, PZEM-004T AC mains energy metering, and an SSD1306 0.96" I2C OLED multi-screen diagnostics display.
+
+### ⚡ Circuitry & Transceiver Modules
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="50%">
+        <img src="assets/hardware/Circuit.png" width="100%" alt="Complete Hardware Circuit" /><br/>
+        <b>⚡ Complete Dual-Core ESP32 IoT Circuit Setup</b><br/>
+        <sub>ESP32 Dev Module, PZEM-004T v3.0, Gated DHT22 &amp; OLED Display</sub>
+      </td>
+      <td align="center" width="50%">
+        <img src="assets/hardware/Ir_Blaster_Receiver.png" width="100%" alt="IR Blaster and Receiver Setup" /><br/>
+        <b>📡 Bi-Directional IR Transceiver Hardware</b><br/>
+        <sub>TSOP38238 38kHz Decoder &amp; 940nm Blaster Transistor Circuit</sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+### 📺 SSD1306 0.96" OLED Multi-Screen Telemetry
+
+Tactile push-button screen rotation allows reviewing live performance metrics directly at the device:
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="33%">
+        <img src="assets/hardware/Screen_1.png" width="100%" alt="OLED Screen 1" /><br/>
+        <b>Screen 1 : Primary Climate</b><br/>
+        <sub>Indoor Temp, Humidity &amp; Target Setpoint</sub>
+      </td>
+      <td align="center" width="33%">
+        <img src="assets/hardware/Screen_2a.png" width="100%" alt="OLED Screen 2a" /><br/>
+        <b>Screen 2 : Active Power Draw</b><br/>
+        <sub>Real-time Wattage (W) &amp; Compressor Load</sub>
+      </td>
+      <td align="center" width="33%">
+        <img src="assets/hardware/Screen_2b.png" width="100%" alt="OLED Screen 2b" /><br/>
+        <b>Screen 2b : Grid Voltage &amp; Current</b><br/>
+        <sub>True-RMS AC Voltage (V) &amp; Current (A)</sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="33%">
+        <img src="assets/hardware/Screen_3.png" width="100%" alt="OLED Screen 3" /><br/>
+        <b>Screen 3 : Cumulative Energy</b><br/>
+        <sub>Total Energy Consumed (kWh) &amp; Cost Tariff</sub>
+      </td>
+      <td align="center" width="33%">
+        <img src="assets/hardware/Screen_4.png" width="100%" alt="OLED Screen 4" /><br/>
+        <b>Screen 4 : Network Health</b><br/>
+        <sub>WiFi RSSI, IP Address &amp; MQTT TLS Status</sub>
+      </td>
+      <td align="center" width="33%">
+        <img src="assets/hardware/Screen_5.png" width="100%" alt="OLED Screen 5" /><br/>
+        <b>Screen 5 : Filter &amp; Diagnostics</b><br/>
+        <sub>Air Filter Health (NVS) &amp; Boot Reason</sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## 🎥 Real-World Demonstration Video
+
+> 🎬 **Hardware Working Demonstration & Full Walkthrough**
+> 
+> A comprehensive real-world test and demonstration covering:
+> 1. **Bi-Directional Sync**: Turning on AC from physical IR remote reflects instantly in the mobile app via 38kHz loopback decoding.
+> 2. **Mobile Control**: Setting temperatures, cooling modes, fan speeds, and swing vanes from anywhere via EMQX TLS MQTT.
+> 3. **Live Power Surge Response**: Monitoring instantaneous active power (W) and current (A) spikes as the compressor engages.
+> 4. **Cloud Telegram Alerts**: Demonstrating automated 24/7 turn-off energy summaries and voltage brownout warnings.
+> 
+> 🔗 **Demo Video Link**: *[Click here to watch the HD Hardware Demo on Google Drive](#)* *(Video link will be updated here)*
+
+---
 ## 🏛️ System Architecture
 
 <p align="center">
