@@ -167,19 +167,6 @@ The on-board OLED display gives real-time local visibility without needing to op
   </table>
 </div>
 
----
-
-## 🎥 Real-World Demonstration Video
-
-> 🎬 **Hardware Working Demonstration & Full Walkthrough**
-> 
-> A comprehensive real-world test and demonstration covering:
-> 1. **Bi-Directional Sync**: Turning on AC from physical IR remote reflects instantly in the mobile app via 38kHz loopback decoding.
-> 2. **Mobile Control**: Setting temperatures, cooling modes, fan speeds, and swing vanes from anywhere via EMQX TLS MQTT.
-> 3. **Live Power Surge Response**: Monitoring instantaneous active power (W) and current (A) spikes as the compressor engages.
-> 4. **Cloud Telegram Alerts**: Demonstrating automated 24/7 turn-off energy summaries and voltage brownout warnings.
-> 
-> 🔗 **Demo Video Link**: *[Click here to watch the HD Hardware Demo on Google Drive](#)* *(Video link will be updated here)*
 
 ---
 ## 🏛️ System Architecture
